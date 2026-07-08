@@ -99,13 +99,17 @@ export async function POST(request: NextRequest) {
   const newCount =
     rateData && rateData.window_start > windowStart ? rateData.report_count + 1 : 1
 
-  await supabaseAdmin.from('rate_limits').upsert({
+  const { error: upsertError } = await supabaseAdmin.from('rate_limits').upsert({
     ip,
     report_count: newCount,
     window_start: rateData && rateData.window_start > windowStart
       ? rateData.window_start
       : new Date().toISOString(),
   })
+
+  if (upsertError) {
+    return NextResponse.json({ error: 'Rate limit update failed' }, { status: 500 })
+  }
 
   // Insert sighting using PostGIS ST_MakePoint
   const { error: insertError } = await supabaseAdmin.rpc('insert_sighting', {
