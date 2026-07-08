@@ -59,7 +59,7 @@ export default function ReportMap() {
     }
   }, [step])
 
-  function useMyLocation() {
+  function handleUseMyLocation() {
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude: lat, longitude: lng } = pos.coords
@@ -94,7 +94,7 @@ export default function ReportMap() {
 
       if (res.status === 201) {
         setError(null)
-        router.push('/?reported=1')
+        router.push('/')
         return
       }
       if (res.status === 429) {
@@ -205,7 +205,7 @@ export default function ReportMap() {
       {/* Bottom controls */}
       <div className="absolute bottom-8 left-4 right-4 flex flex-col gap-3">
         <button
-          onClick={useMyLocation}
+          onClick={handleUseMyLocation}
           className="flex min-h-[44px] items-center justify-center rounded-full bg-black/70 px-6 py-3 text-white backdrop-blur"
         >
           Use my location
