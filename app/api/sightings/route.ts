@@ -82,8 +82,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (rateError) {
-    console.error('Rate limit check error:', JSON.stringify(rateError))
-    return NextResponse.json({ error: 'Rate limit check failed' }, { status: 500 })
+return NextResponse.json({ error: 'Rate limit check failed' }, { status: 500 })
   }
 
   if (rateData && rateData.window_start > windowStart && rateData.report_count >= 3) {
