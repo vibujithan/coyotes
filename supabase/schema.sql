@@ -26,3 +26,6 @@ alter table sightings enable row level security;
 create policy "public read last 7 days"
   on sightings for select
   using (spotted_at > now() - interval '7 days');
+
+-- Deny all direct access to rate_limits; only service role can touch it
+alter table rate_limits enable row level security;
