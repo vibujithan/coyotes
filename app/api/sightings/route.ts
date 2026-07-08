@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 
 const WHITBY_BBOX = {
-  minLat: 43.80,
-  maxLat: 43.97,
-  minLng: -79.05,
-  maxLng: -78.85,
+  minLat: 43.70,
+  maxLat: 44.07,
+  minLng: -79.20,
+  maxLng: -78.70,
 }
 
 const TIME_AGO_OFFSETS: Record<string, number> = {

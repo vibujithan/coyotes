@@ -20,7 +20,7 @@ export default function MapView() {
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [-78.9429, 43.8975],
-      zoom: 13,
+      zoom: 11,
     })
     map.current = instance
 
@@ -46,16 +46,17 @@ export default function MapView() {
           source: 'sightings',
           paint: {
             'heatmap-weight': ['interpolate', ['linear'], ['get', 'count'], 0, 0, 10, 1],
-            'heatmap-radius': 30,
-            'heatmap-opacity': 0.8,
+            'heatmap-intensity': 3,
+            'heatmap-radius': 20,
+            'heatmap-opacity': 1,
             'heatmap-color': [
               'interpolate',
               ['linear'],
               ['heatmap-density'],
-              0, 'rgba(0,0,0,0)',
-              0.2, 'rgba(255,235,59,0.6)',
-              0.6, 'rgba(255,152,0,0.8)',
-              1, 'rgba(244,67,54,1)',
+              0,    'rgba(0,0,0,0)',
+              0.05, 'rgba(244,67,54,0.15)',
+              0.3,  'rgba(244,67,54,0.6)',
+              1,    'rgba(200,0,0,1)',
             ],
           },
         })

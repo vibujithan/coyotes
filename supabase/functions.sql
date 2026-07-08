@@ -28,6 +28,6 @@ language sql security definer as $$
     spotted_at > now() - interval '7 days'
     and ST_Within(
       location::geometry,
-      ST_MakeEnvelope(-79.05, 43.80, -78.85, 43.97, 4326)
+      ST_MakeEnvelope(-79.20, 43.70, -78.70, 44.07, 4326)
     );
 $$;
