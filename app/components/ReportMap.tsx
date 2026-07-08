@@ -136,7 +136,7 @@ export default function ReportMap() {
 
   if (step === 2) {
     return (
-      <div className="flex min-h-screen flex-col bg-zinc-900 text-white">
+      <div className="flex min-h-[100dvh] flex-col bg-zinc-900 text-white">
         <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
           <button
             onClick={() => setStep(1)}
@@ -209,7 +209,7 @@ export default function ReportMap() {
 
   // Step 1 — Location
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-[100dvh] w-full">
       <div ref={mapContainer} className="h-full w-full" />
 
       {/* Header */}

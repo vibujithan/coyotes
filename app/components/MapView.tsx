@@ -101,7 +101,7 @@ export default function MapView() {
   }, [])
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-[100dvh] w-full">
       <div ref={mapContainer} className="h-full w-full" />
 
       <div className="absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-md">
