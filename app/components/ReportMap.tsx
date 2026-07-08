@@ -35,11 +35,32 @@ export default function ReportMap() {
 
     const instance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [-78.9429, 43.8975],
       zoom: 13,
     })
     map.current = instance
+
+    instance.on('load', () => {
+      const hidePatterns = ['poi', 'transit', 'airport', 'building', 'bus']
+      const roadPatterns = ['road-label', 'road-number', 'road-intersection', 'road-shield']
+      instance.getStyle().layers.forEach((layer) => {
+        if (hidePatterns.some((p) => layer.id.includes(p))) {
+          instance.setLayoutProperty(layer.id, 'visibility', 'none')
+        } else if (roadPatterns.some((p) => layer.id.includes(p))) {
+          instance.setPaintProperty(layer.id, 'text-opacity', [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            16, 1,
+          ])
+          instance.setPaintProperty(layer.id, 'icon-opacity', [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            16, 1,
+          ])
+        }
+      })
+    })
 
     instance.on('click', (e) => {
       const { lat, lng } = e.lngLat
@@ -116,7 +137,7 @@ export default function ReportMap() {
   if (step === 2) {
     return (
       <div className="flex min-h-screen flex-col bg-zinc-900 text-white">
-        <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-4">
+        <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
           <button
             onClick={() => setStep(1)}
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-zinc-400 hover:text-white"
@@ -126,10 +147,10 @@ export default function ReportMap() {
           <h1 className="text-lg font-semibold">Report Sighting</h1>
         </div>
 
-        <div className="flex flex-1 flex-col gap-8 px-6 py-8">
+        <div className="flex flex-col gap-5 px-6 py-5">
           {/* Coyote count stepper */}
           <div>
-            <p className="mb-4 text-sm font-medium text-zinc-400">How many coyotes?</p>
+            <p className="mb-3 text-sm font-medium text-zinc-400">How many coyotes?</p>
             <div className="flex items-center gap-6">
               <button
                 onClick={() => setCount((c) => Math.max(1, c - 1))}
@@ -177,7 +198,7 @@ export default function ReportMap() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="mt-auto flex min-h-[44px] items-center justify-center rounded-full bg-amber-500 px-6 py-3 text-base font-semibold text-black disabled:opacity-50"
+            className="flex min-h-[44px] items-center justify-center rounded-full bg-amber-500 px-6 py-3 text-base font-semibold text-black disabled:opacity-50"
           >
             {submitting ? 'Submitting…' : 'Submit Sighting'}
           </button>

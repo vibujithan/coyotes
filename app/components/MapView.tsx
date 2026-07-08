@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import Link from 'next/link'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -9,22 +9,51 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
 type Sighting = { lat: number; lng: number; count: number }
 
+const ANIMALS = [
+  { name: 'Coyote', emoji: '🐺', active: true, href: '/report' },
+  { name: 'Bear', emoji: '🐻', active: false },
+  { name: 'Moose', emoji: '🦌', active: false },
+  { name: 'Bobcat', emoji: '🐱', active: false },
+]
+
 export default function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return
 
     const instance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: 'mapbox://styles/mapbox/streets-v12',
       center: [-78.9429, 43.8975],
       zoom: 11,
     })
     map.current = instance
 
     instance.on('load', async () => {
+      // Hide POI, transit, building clutter
+      const hidePatterns = ['poi', 'transit', 'airport', 'building', 'bus']
+      // Road labels fade in only at close zoom
+      const roadPatterns = ['road-label', 'road-number', 'road-intersection', 'road-shield']
+      instance.getStyle().layers.forEach((layer) => {
+        if (hidePatterns.some((p) => layer.id.includes(p))) {
+          instance.setLayoutProperty(layer.id, 'visibility', 'none')
+        } else if (roadPatterns.some((p) => layer.id.includes(p))) {
+          instance.setPaintProperty(layer.id, 'text-opacity', [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            16, 1,
+          ])
+          instance.setPaintProperty(layer.id, 'icon-opacity', [
+            'interpolate', ['linear'], ['zoom'],
+            14, 0,
+            16, 1,
+          ])
+        }
+      })
+
       try {
         const res = await fetch('/api/sightings')
         if (!res.ok) return
@@ -74,17 +103,58 @@ export default function MapView() {
   return (
     <div className="relative h-screen w-full">
       <div ref={mapContainer} className="h-full w-full" />
-      <div className="absolute top-4 left-4 rounded-full bg-black/60 px-3 py-1 text-sm text-white">
+
+      <div className="absolute top-4 left-4 rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-md">
         Last 7 days
       </div>
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-        <Link
-          href="/report"
-          className="flex min-h-[44px] items-center rounded-full bg-amber-500 px-6 py-3 text-base font-semibold text-black shadow-lg active:bg-amber-600"
-        >
-          Report Sighting
-        </Link>
-      </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setMenuOpen((o) => !o)}
+        className="absolute bottom-8 right-5 flex h-14 w-14 items-center justify-center rounded-full bg-red-500 text-3xl text-white shadow-xl active:bg-red-600"
+        aria-label="Report sighting"
+      >
+        {menuOpen ? '×' : '+'}
+      </button>
+
+      {/* Animal picker sheet */}
+      {menuOpen && (
+        <>
+          {/* backdrop */}
+          <div
+            className="absolute inset-0 bg-black/20"
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* sheet */}
+          <div className="absolute bottom-28 right-4 w-52 overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <p className="border-b border-gray-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Report sighting
+            </p>
+            {ANIMALS.map((a) =>
+              a.active ? (
+                <Link
+                  key={a.name}
+                  href={a.href!}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 active:bg-gray-100"
+                >
+                  <span className="text-xl">{a.emoji}</span>
+                  {a.name}
+                </Link>
+              ) : (
+                <div
+                  key={a.name}
+                  className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300"
+                >
+                  <span className="text-xl opacity-40">{a.emoji}</span>
+                  {a.name}
+                  <span className="ml-auto text-xs">Soon</span>
+                </div>
+              )
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
