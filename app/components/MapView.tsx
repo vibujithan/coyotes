@@ -29,6 +29,7 @@ function hoursAgo(iso: string): string {
 export default function MapView() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
+  const animFrame = useRef<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -95,16 +96,48 @@ export default function MapView() {
           },
         })
 
-        // Invisible click-target dots
+        // Pulsing radar ring
+        instance.addLayer({
+          id: 'sightings-pulse',
+          type: 'circle',
+          source: 'sightings',
+          paint: {
+            'circle-radius': 8,
+            'circle-color': 'rgba(220,38,38,0)',
+            'circle-stroke-color': 'rgba(220,38,38,0.8)',
+            'circle-stroke-width': 2,
+            'circle-opacity': 1,
+          },
+        })
+
+        // Solid core dot + click target
         instance.addLayer({
           id: 'sightings-dots',
           type: 'circle',
           source: 'sightings',
           paint: {
-            'circle-radius': 18,
-            'circle-color': 'rgba(0,0,0,0)',
+            'circle-radius': 6,
+            'circle-color': '#dc2626',
+            'circle-stroke-color': 'white',
+            'circle-stroke-width': 1.5,
           },
         })
+
+        // Animate the pulse ring
+        let start: number | null = null
+        function animatePulse(ts: number) {
+          if (start === null) start = ts
+          const t = ((ts - start) % 1800) / 1800
+          const radius = 6 + t * 22
+          const opacity = 1 - t
+          if (instance.getLayer('sightings-pulse')) {
+            instance.setPaintProperty('sightings-pulse', 'circle-radius', radius)
+            instance.setPaintProperty('sightings-pulse', 'circle-stroke-width', (1 - t) * 2.5)
+            instance.setPaintProperty('sightings-pulse', 'circle-stroke-color', `rgba(220,38,38,${opacity.toFixed(2)})`)
+          }
+          animFrame.current = requestAnimationFrame(animatePulse)
+        }
+        animFrame.current = requestAnimationFrame(animatePulse)
 
         // Click handler
         instance.on('click', 'sightings-dots', (e) => {
@@ -142,6 +175,7 @@ export default function MapView() {
     })
 
     return () => {
+      if (animFrame.current) cancelAnimationFrame(animFrame.current)
       instance.remove()
       map.current = null
     }
