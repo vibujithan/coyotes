@@ -16,13 +16,13 @@ const ANIMALS = [
   { name: 'Bobcat', emoji: '🐱', active: false },
 ]
 
-// Color by how many hours ago the most recent sighting was
+// Color by how many hours ago — uses case/coalesce to handle null/NaN safely
 const COLOR_BY_AGE = (prop: string): mapboxgl.Expression => [
-  'step', ['get', prop],
-  '#dc2626',      // 0–6h: red
-  6,  '#f97316',  // 6–24h: orange
-  24, '#f59e0b',  // 24–72h: amber
-  72, '#ca8a04',  // 72h+: yellow
+  'case',
+  ['<', ['coalesce', ['get', prop], 999], 6],  '#dc2626',  // 0–6h: red
+  ['<', ['coalesce', ['get', prop], 999], 24], '#f97316',  // 6–24h: orange
+  ['<', ['coalesce', ['get', prop], 999], 72], '#f59e0b',  // 24–72h: amber
+  '#ca8a04',                                               // 72h+: yellow
 ]
 
 function formatHoursAgo(h: number): string {
@@ -82,15 +82,17 @@ export default function MapView() {
         const now = Date.now()
         const geojson: GeoJSON.FeatureCollection = {
           type: 'FeatureCollection',
-          features: sightings.map((s) => ({
-            type: 'Feature',
-            properties: {
-              count: s.count,
-              // h = hours ago (numeric, used by Mapbox expressions)
-              h: (now - new Date(s.spotted_at).getTime()) / 3_600_000,
-            },
-            geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
-          })),
+          features: sightings
+            .filter((s) => s.spotted_at && !isNaN(new Date(s.spotted_at).getTime()))
+            .map((s) => ({
+              type: 'Feature',
+              properties: {
+                count: s.count,
+                // h = hours ago (numeric, used by Mapbox paint expressions)
+                h: Math.max(0, (now - new Date(s.spotted_at).getTime()) / 3_600_000),
+              },
+              geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
+            })),
         }
 
         instance.addSource('sightings', {
