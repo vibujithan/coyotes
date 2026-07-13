@@ -16,16 +16,28 @@ const ANIMALS = [
   { name: 'Bobcat', emoji: '🐱', active: false },
 ]
 
-function hoursAgo(iso: string | null | undefined): string {
-  if (!iso) return 'recently'
-  const diff = Date.now() - new Date(iso).getTime()
-  if (isNaN(diff)) return 'recently'
-  const h = Math.floor(diff / 3_600_000)
+// Color by how many hours ago the most recent sighting was
+const COLOR_BY_AGE = (prop: string): mapboxgl.Expression => [
+  'step', ['get', prop],
+  '#dc2626',      // 0–6h: red
+  6,  '#f97316',  // 6–24h: orange
+  24, '#f59e0b',  // 24–72h: amber
+  72, '#ca8a04',  // 72h+: yellow
+]
+
+function formatHoursAgo(h: number): string {
   if (h < 1) return 'less than an hour ago'
-  if (h === 1) return '1 hour ago'
-  if (h < 24) return `${h} hours ago`
+  if (h < 2) return '1 hour ago'
+  if (h < 24) return `${Math.floor(h)} hours ago`
   const d = Math.floor(h / 24)
   return d === 1 ? 'yesterday' : `${d} days ago`
+}
+
+function dotColor(h: number): string {
+  if (h < 6) return 'rgba(220,38,38'
+  if (h < 24) return 'rgba(249,115,22'
+  if (h < 72) return 'rgba(245,158,11'
+  return 'rgba(202,138,4'
 }
 
 export default function MapView() {
@@ -67,110 +79,143 @@ export default function MapView() {
         if (!res.ok) return
         const sightings: Sighting[] = await res.json()
 
+        const now = Date.now()
         const geojson: GeoJSON.FeatureCollection = {
           type: 'FeatureCollection',
           features: sightings.map((s) => ({
             type: 'Feature',
-            properties: { count: s.count, spotted_at: s.spotted_at },
+            properties: {
+              count: s.count,
+              // h = hours ago (numeric, used by Mapbox expressions)
+              h: (now - new Date(s.spotted_at).getTime()) / 3_600_000,
+            },
             geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
           })),
         }
 
-        instance.addSource('sightings', { type: 'geojson', data: geojson })
-
-        // Heatmap layer
-        instance.addLayer({
-          id: 'sightings-heat',
-          type: 'heatmap',
-          source: 'sightings',
-          paint: {
-            'heatmap-weight': ['interpolate', ['linear'], ['get', 'count'], 0, 0, 10, 1],
-            'heatmap-intensity': 3,
-            'heatmap-radius': 20,
-            'heatmap-opacity': 1,
-            'heatmap-color': [
-              'interpolate', ['linear'], ['heatmap-density'],
-              0,    'rgba(0,0,0,0)',
-              0.05, 'rgba(244,67,54,0.15)',
-              0.3,  'rgba(244,67,54,0.6)',
-              1,    'rgba(200,0,0,1)',
-            ],
+        instance.addSource('sightings', {
+          type: 'geojson',
+          data: geojson,
+          cluster: true,
+          clusterRadius: 40,
+          clusterMaxZoom: 14,
+          clusterProperties: {
+            minH: ['min', ['get', 'h']],          // most recent sighting in cluster
+            totalCount: ['+', ['get', 'count']],  // total coyotes
           },
         })
 
-        // Pulsing radar ring
+        // Pulse ring — unclustered only
         instance.addLayer({
           id: 'sightings-pulse',
           type: 'circle',
           source: 'sightings',
+          filter: ['!', ['has', 'point_count']],
           paint: {
-            'circle-radius': 8,
-            'circle-color': 'rgba(220,38,38,0)',
-            'circle-stroke-color': 'rgba(220,38,38,0.8)',
+            'circle-radius': 5,
+            'circle-color': 'rgba(0,0,0,0)',
+            'circle-stroke-color': COLOR_BY_AGE('h'),
             'circle-stroke-width': 2,
-            'circle-opacity': 1,
           },
         })
 
-        // Solid core dot + click target
+        // Clustered dots (2+ reports merged)
         instance.addLayer({
-          id: 'sightings-dots',
+          id: 'sightings-cluster',
           type: 'circle',
           source: 'sightings',
+          filter: ['has', 'point_count'],
           paint: {
-            'circle-radius': 6,
-            'circle-color': '#dc2626',
+            'circle-color': COLOR_BY_AGE('minH'),
+            'circle-radius': [
+              'step', ['get', 'point_count'],
+              8,   // 1 (shouldn't happen but safe)
+              2, 10,  // 2–3 reports
+              4, 13,  // 4–7 reports
+              8, 16,  // 8+ reports
+            ],
             'circle-stroke-color': 'white',
             'circle-stroke-width': 1.5,
           },
         })
 
-        // Animate the pulse ring
+        // Unclustered single dot
+        instance.addLayer({
+          id: 'sightings-dots',
+          type: 'circle',
+          source: 'sightings',
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-radius': 5,
+            'circle-color': COLOR_BY_AGE('h'),
+            'circle-stroke-color': 'white',
+            'circle-stroke-width': 1.5,
+          },
+        })
+
+        // Animate pulse ring
         let start: number | null = null
         function animatePulse(ts: number) {
           if (start === null) start = ts
-          const t = ((ts - start) % 1800) / 1800
-          const radius = 6 + t * 22
-          const opacity = 1 - t
+          const t = ((ts - start) % 2000) / 2000
+          const radius = 5 + t * 10   // 5→15px (small)
+          const opacity = (1 - t).toFixed(2)
           if (instance.getLayer('sightings-pulse')) {
             instance.setPaintProperty('sightings-pulse', 'circle-radius', radius)
-            instance.setPaintProperty('sightings-pulse', 'circle-stroke-width', (1 - t) * 2.5)
-            instance.setPaintProperty('sightings-pulse', 'circle-stroke-color', `rgba(220,38,38,${opacity.toFixed(2)})`)
+            instance.setPaintProperty('sightings-pulse', 'circle-stroke-width', (1 - t) * 2)
+            // Keep color expression but override opacity via stroke-color alpha
+            instance.setPaintProperty('sightings-pulse', 'circle-stroke-color', COLOR_BY_AGE('h'))
+            instance.setPaintProperty('sightings-pulse', 'circle-stroke-opacity', parseFloat(opacity))
           }
           animFrame.current = requestAnimationFrame(animatePulse)
         }
         animFrame.current = requestAnimationFrame(animatePulse)
 
-        // Click handler
-        instance.on('click', 'sightings-dots', (e) => {
-          const features = instance.queryRenderedFeatures(e.point, { layers: ['sightings-dots'] })
+        // Popup — cluster click
+        instance.on('click', 'sightings-cluster', (e) => {
+          const features = instance.queryRenderedFeatures(e.point, { layers: ['sightings-cluster'] })
           if (!features.length) return
-
-          // Aggregate nearby sightings
-          const count = features.length
-          const totalCoyotes = features.reduce((sum, f) => sum + ((f.properties?.count as number) ?? 1), 0)
-          const mostRecent = features[0].properties?.spotted_at as string
-
+          const props = features[0].properties!
           const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
-
-          new mapboxgl.Popup({ closeButton: false, className: 'sighting-popup' })
+          const minH: number = props.minH ?? 0
+          const totalCount: number = props.totalCount ?? 1
+          const reporters: number = props.point_count ?? 1
+          new mapboxgl.Popup({ closeButton: false })
             .setLngLat(coords)
             .setHTML(
-              `<div style="font-size:14px;padding:4px 2px;line-height:1.6">
-                🐺 <strong>${totalCoyotes} coyote${totalCoyotes !== 1 ? 's' : ''}</strong><br>
-                🕐 ${hoursAgo(mostRecent)}<br>
-                👤 ${count === 1 ? '1 person reported' : `${count} people reported`}
+              `<div style="font-size:14px;padding:4px 2px;line-height:1.7">
+                🐺 <strong>${totalCount} coyote${totalCount !== 1 ? 's' : ''}</strong><br>
+                🕐 ${formatHoursAgo(minH)}<br>
+                👤 ${reporters === 1 ? '1 person reported' : `${reporters} people reported`}
               </div>`
             )
             .addTo(instance)
         })
 
-        instance.on('mouseenter', 'sightings-dots', () => {
-          instance.getCanvas().style.cursor = 'pointer'
+        // Popup — single dot click
+        instance.on('click', 'sightings-dots', (e) => {
+          const features = instance.queryRenderedFeatures(e.point, { layers: ['sightings-dots'] })
+          if (!features.length) return
+          const props = features[0].properties!
+          const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
+          const h: number = props.h ?? 0
+          const count: number = props.count ?? 1
+          new mapboxgl.Popup({ closeButton: false })
+            .setLngLat(coords)
+            .setHTML(
+              `<div style="font-size:14px;padding:4px 2px;line-height:1.7">
+                🐺 <strong>${count} coyote${count !== 1 ? 's' : ''}</strong><br>
+                🕐 ${formatHoursAgo(h)}<br>
+                👤 1 person reported
+              </div>`
+            )
+            .addTo(instance)
         })
-        instance.on('mouseleave', 'sightings-dots', () => {
-          instance.getCanvas().style.cursor = ''
-        })
+
+        for (const layer of ['sightings-cluster', 'sightings-dots']) {
+          instance.on('mouseenter', layer, () => { instance.getCanvas().style.cursor = 'pointer' })
+          instance.on('mouseleave', layer, () => { instance.getCanvas().style.cursor = '' })
+        }
       } catch {
         // silently fail
       }
