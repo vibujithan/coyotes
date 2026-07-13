@@ -16,8 +16,10 @@ const ANIMALS = [
   { name: 'Bobcat', emoji: '🐱', active: false },
 ]
 
-function hoursAgo(iso: string): string {
+function hoursAgo(iso: string | null | undefined): string {
+  if (!iso) return 'recently'
   const diff = Date.now() - new Date(iso).getTime()
+  if (isNaN(diff)) return 'recently'
   const h = Math.floor(diff / 3_600_000)
   if (h < 1) return 'less than an hour ago'
   if (h === 1) return '1 hour ago'
