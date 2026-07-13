@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Pulsing radar location marker */
+.location-marker {
+  position: relative;
+  width: 16px;
+  height: 16px;
+}
+.location-marker .dot {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid white;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.location-marker .ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: rgba(59,130,246,0.3);
+  animation: radar 2s ease-out infinite;
+}
+.location-marker .ring2 {
+  animation-delay: 0.8s;
+}
+@keyframes radar {
+  0%   { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}

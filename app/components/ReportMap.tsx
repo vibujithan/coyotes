@@ -89,7 +89,10 @@ export default function ReportMap() {
       if (marker.current) {
         marker.current.setLngLat([lng, lat])
       } else if (map.current) {
-        marker.current = new mapboxgl.Marker({ color: '#f59e0b' })
+        const el = document.createElement('div')
+        el.className = 'location-marker'
+        el.innerHTML = '<div class="ring"></div><div class="ring ring2"></div><div class="dot"></div>'
+        marker.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([lng, lat])
           .addTo(map.current)
       }
