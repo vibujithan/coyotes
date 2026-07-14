@@ -7,7 +7,7 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
-type TimeAgo = 'now' | '1-3h' | '3-6h' | 'today' | 'yesterday'
+type TimeAgo = 'now' | '1-3h' | '3-6h' | 'today' | 'yesterday' | 'last-week'
 
 const TIME_OPTIONS: { label: string; value: TimeAgo }[] = [
   { label: 'Just now', value: 'now' },
@@ -15,6 +15,7 @@ const TIME_OPTIONS: { label: string; value: TimeAgo }[] = [
   { label: '3–6 hours ago', value: '3-6h' },
   { label: 'Earlier today', value: 'today' },
   { label: 'Yesterday', value: 'yesterday' },
+  { label: 'Last week', value: 'last-week' },
 ]
 
 export default function ReportMap() {

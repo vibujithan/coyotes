@@ -14,6 +14,7 @@ const TIME_AGO_OFFSETS: Record<string, number> = {
   '3-6h': 270,
   'today': 8 * 60,
   'yesterday': 24 * 60,
+  'last-week': 5 * 24 * 60,
 }
 
 function isInWhitby(lat: number, lng: number): boolean {
