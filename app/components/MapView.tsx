@@ -82,17 +82,15 @@ export default function MapView() {
         const now = Date.now()
         const geojson: GeoJSON.FeatureCollection = {
           type: 'FeatureCollection',
-          features: sightings
-            .filter((s) => s.spotted_at && !isNaN(new Date(s.spotted_at).getTime()))
-            .map((s) => ({
+          features: sightings.map((s) => {
+            const ts = s.spotted_at ? new Date(s.spotted_at).getTime() : NaN
+            const h = isNaN(ts) ? 168 : Math.max(0, (now - ts) / 3_600_000)
+            return {
               type: 'Feature',
-              properties: {
-                count: s.count,
-                // h = hours ago (numeric, used by Mapbox paint expressions)
-                h: Math.max(0, (now - new Date(s.spotted_at).getTime()) / 3_600_000),
-              },
+              properties: { count: s.count, h },
               geometry: { type: 'Point', coordinates: [s.lng, s.lat] },
-            })),
+            }
+          }),
         }
 
         instance.addSource('sightings', {
