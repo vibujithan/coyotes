@@ -74,6 +74,36 @@ export default function MapView() {
         }
       })
 
+      // Restrict panning to reporting region
+      instance.setMaxBounds([[-79.40, 43.55], [-78.50, 44.22]])
+
+      // Gray mask outside reporting bbox
+      instance.addSource('mask', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              // Outer ring: whole world
+              [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]],
+              // Inner hole: reporting area (Whitby + surroundings)
+              [[-79.20, 43.70], [-79.20, 44.07], [-78.70, 44.07], [-78.70, 43.70], [-79.20, 43.70]],
+            ],
+          },
+        },
+      })
+      instance.addLayer({
+        id: 'mask-layer',
+        type: 'fill',
+        source: 'mask',
+        paint: {
+          'fill-color': '#94a3b8',
+          'fill-opacity': 0.45,
+        },
+      })
+
       try {
         const res = await fetch('/api/sightings')
         if (!res.ok) return
