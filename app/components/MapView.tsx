@@ -119,7 +119,7 @@ export default function MapView() {
           },
         })
 
-        // Clustered dots (2+ reports merged)
+        // Clustered dots — same size as single dots, color by most recent
         instance.addLayer({
           id: 'sightings-cluster',
           type: 'circle',
@@ -127,13 +127,7 @@ export default function MapView() {
           filter: ['has', 'point_count'],
           paint: {
             'circle-color': COLOR_BY_AGE('minH'),
-            'circle-radius': [
-              'step', ['get', 'point_count'],
-              8,   // 1 (shouldn't happen but safe)
-              2, 10,  // 2–3 reports
-              4, 13,  // 4–7 reports
-              8, 16,  // 8+ reports
-            ],
+            'circle-radius': 5,
             'circle-stroke-color': 'white',
             'circle-stroke-width': 1.5,
           },
