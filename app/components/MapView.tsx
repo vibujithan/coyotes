@@ -127,8 +127,8 @@ export default function MapView() {
           type: 'geojson',
           data: geojson,
           cluster: true,
-          clusterRadius: 40,
-          clusterMaxZoom: 14,
+          clusterRadius: 50,
+          clusterMaxZoom: 18,
           clusterProperties: {
             minH: ['min', ['get', 'h']],          // most recent sighting in cluster
             totalCount: ['+', ['get', 'count']],  // total coyotes
