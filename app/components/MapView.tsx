@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
@@ -45,6 +46,16 @@ export default function MapView() {
   const map = useRef<mapboxgl.Map | null>(null)
   const animFrame = useRef<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const router = useRouter()
+
+  function goToReport() {
+    const center = map.current?.getCenter()
+    const zoom = map.current?.getZoom() ?? 11
+    const params = center
+      ? `?lat=${center.lat.toFixed(5)}&lng=${center.lng.toFixed(5)}&zoom=${zoom.toFixed(1)}`
+      : ''
+    router.push(`/report${params}`)
+  }
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return
@@ -279,15 +290,14 @@ export default function MapView() {
             </p>
             {ANIMALS.map((a) =>
               a.active ? (
-                <Link
+                <button
                   key={a.name}
-                  href={a.href!}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 active:bg-gray-100"
+                  onClick={() => { setMenuOpen(false); goToReport() }}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm font-medium text-gray-900 hover:bg-gray-50 active:bg-gray-100"
                 >
                   <span className="text-xl">{a.emoji}</span>
                   {a.name}
-                </Link>
+                </button>
               ) : (
                 <div key={a.name} className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300">
                   <span className="text-xl opacity-40">{a.emoji}</span>

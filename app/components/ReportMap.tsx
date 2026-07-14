@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
@@ -20,9 +20,14 @@ const TIME_OPTIONS: { label: string; value: TimeAgo }[] = [
 
 export default function ReportMap() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const marker = useRef<mapboxgl.Marker | null>(null)
+
+  const initLat = parseFloat(searchParams.get('lat') ?? '') || 43.8975
+  const initLng = parseFloat(searchParams.get('lng') ?? '') || -78.9429
+  const initZoom = parseFloat(searchParams.get('zoom') ?? '') || 13
 
   const [step, setStep] = useState<1 | 2>(1)
   const [pinCoords, setPinCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -37,8 +42,8 @@ export default function ReportMap() {
     const instance = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-78.9429, 43.8975],
-      zoom: 13,
+      center: [initLng, initLat],
+      zoom: initZoom,
     })
     map.current = instance
 
