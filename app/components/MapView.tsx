@@ -46,6 +46,7 @@ export default function MapView() {
   const map = useRef<mapboxgl.Map | null>(null)
   const animFrame = useRef<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [infoOpen, setInfoOpen] = useState(false)
   const router = useRouter()
 
   function goToReport() {
@@ -271,18 +272,36 @@ export default function MapView() {
         Last 7 days
       </div>
 
-      {/* Attribution */}
-      <a
-        href="https://novaraml.ca"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-600 shadow backdrop-blur hover:text-gray-900"
+      {/* Info button */}
+      <button
+        onClick={() => setInfoOpen((o) => !o)}
+        className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-bold text-gray-500 shadow-md hover:text-gray-800"
+        aria-label="About"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
-        Powered by NOVARA MACHINE LEARNING
-      </a>
+        ?
+      </button>
+
+      {/* Info panel */}
+      {infoOpen && (
+        <>
+          <div className="absolute inset-0" onClick={() => setInfoOpen(false)} />
+          <div className="absolute top-14 right-4 w-56 rounded-2xl bg-white p-4 shadow-xl">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Powered by</p>
+            <p className="mt-1 text-sm font-bold text-gray-800">NOVARA MACHINE LEARNING</p>
+            <a
+              href="https://novaraml.ca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex items-center gap-1.5 text-xs text-blue-600 hover:underline"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              novaraml.ca
+            </a>
+          </div>
+        </>
+      )}
 
       {/* FAB */}
       <button
