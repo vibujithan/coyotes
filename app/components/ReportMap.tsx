@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import { useRouter, useSearchParams } from 'next/navigation'
+import LocationSearch from './LocationSearch'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
@@ -228,6 +229,22 @@ export default function ReportMap() {
         </button>
         <h1 className="text-lg font-semibold text-white">Tap to place pin</h1>
       </div>
+
+      {/* Location search */}
+      <LocationSearch
+        mapInstance={map.current}
+        onSelect={(lat, lng) => {
+          setPinCoords({ lat, lng })
+          map.current?.flyTo({ center: [lng, lat], zoom: 15 })
+          if (marker.current) {
+            marker.current.setLngLat([lng, lat])
+          } else if (map.current) {
+            marker.current = new mapboxgl.Marker({ color: '#f59e0b' })
+              .setLngLat([lng, lat])
+              .addTo(map.current)
+          }
+        }}
+      />
 
       {/* Bottom controls */}
       <div className="absolute bottom-8 left-4 right-4 flex flex-col gap-3">
