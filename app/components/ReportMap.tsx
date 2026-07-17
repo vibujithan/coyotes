@@ -244,16 +244,11 @@ export default function ReportMap() {
               .addTo(map.current)
           }
         }}
+        onLocate={handleUseMyLocation}
       />
 
       {/* Bottom controls */}
       <div className="absolute bottom-8 left-4 right-4 flex flex-col gap-3">
-        <button
-          onClick={handleUseMyLocation}
-          className="flex min-h-[44px] items-center justify-center rounded-full bg-black/70 px-6 py-3 text-white backdrop-blur"
-        >
-          Use my location
-        </button>
         <button
           onClick={() => setStep(2)}
           disabled={!pinCoords}

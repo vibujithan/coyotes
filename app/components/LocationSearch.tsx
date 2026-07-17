@@ -13,9 +13,10 @@ interface Result {
 interface Props {
   mapInstance: mapboxgl.Map | null
   onSelect: (lat: number, lng: number) => void
+  onLocate?: () => void
 }
 
-export default function LocationSearch({ mapInstance, onSelect }: Props) {
+export default function LocationSearch({ mapInstance, onSelect, onLocate }: Props) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Result[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
@@ -91,6 +92,16 @@ export default function LocationSearch({ mapInstance, onSelect }: Props) {
         {query && (
           <button onClick={() => { setQuery(''); setResults([]) }} className="text-gray-400 hover:text-gray-600">
             ×
+          </button>
+        )}
+        {onLocate && !query && (
+          <button onClick={onLocate} className="text-gray-400 hover:text-gray-700" aria-label="Use my location">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="12" r="8" />
+            </svg>
           </button>
         )}
       </div>
